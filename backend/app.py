@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_restx import Api
 from dotenv import load_dotenv
@@ -33,6 +33,15 @@ def create_app() -> Flask:
     @app.get("/api/health")
     def health():
         return {"status": "ok"}
+
+    # Serve frontend static files
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve(path):
+        if path != "" and os.path.exists(f"../frontend/dist/{path}"):
+            return send_from_directory('../frontend/dist', path)
+        else:
+            return send_from_directory('../frontend/dist', 'index.html')
 
     return app
 

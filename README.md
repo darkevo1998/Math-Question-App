@@ -45,112 +45,101 @@ npm run dev
 
 Open http://localhost:5173.
 
-## Deployment with Vercel (Single Project)
+## Deployment with Railway
 
 ### Prerequisites
 - GitHub account with this repository
-- Vercel account (free at [vercel.com](https://vercel.com))
-- PostgreSQL database (Vercel Postgres, Supabase, or Railway Postgres)
+- Railway account (free at [railway.app](https://railway.app))
+- $5 free credit per month included
 
-### Step-by-Step Deployment
+### Quick Deployment
 
-1. **Deploy as Single Project**
+1. **Deploy to Railway**
    ```bash
-   # Go to vercel.com and sign in with GitHub
-   # Click "New Project" → Import your GitHub repository
-   # Root Directory: / (leave empty for root)
-   # Framework Preset: Vite
-   # Build Command: cd frontend && npm install && npm run build
-   # Output Directory: frontend/dist
+   # Go to railway.app and sign in with GitHub
+   # Click "New Project" → "Deploy from GitHub repo"
+   # Select your MathQuest repository
+   # Railway will automatically detect and deploy your app
    ```
 
-2. **Set Environment Variables**
+2. **Add PostgreSQL Database**
    ```bash
-   # In Vercel dashboard → Settings → Environment Variables
+   # In Railway dashboard, click "New"
+   # Select "Database" → "PostgreSQL"
+   # Railway will automatically link it to your app
+   ```
+
+3. **Set Environment Variables**
+   ```bash
+   # In Railway dashboard → Variables tab
    # Add these variables:
-   # - DATABASE_URL: Your PostgreSQL connection string
    # - APP_SECRET_KEY: Generate a random secret key
-   # - VITE_API_URL: /api
+   # - VITE_API_BASE: Your Railway app URL (e.g., https://your-app.railway.app)
    ```
 
-3. **Database Setup**
-   ```bash
-   # Option A: Vercel Postgres (Recommended)
-   # In Vercel dashboard, go to "Storage" → Create new Postgres database
-   
-   # Option B: Supabase
-   # Create account at supabase.com → Create new project
-   
-   # Option C: Railway Postgres
-   # Create PostgreSQL service on Railway
-   ```
+### Railway Configuration
 
-4. **Database Migrations and Seeding**
-   ```bash
-   # Install Vercel CLI
-   npm i -g vercel
-   
-   # Login and run migrations
-   vercel login
-   vercel env pull .env
-   cd backend
-   python -c "
-   from alembic.config import Config
-   from alembic import command
-   config = Config('alembic.ini')
-   command.upgrade(config, 'head')
-   "
-   python scripts/seed.py
-   ```
-
-### Vercel Configuration
-
-**Root vercel.json:**
+**railway.json:**
 ```json
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "framework": "vite",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/backend/api/index.py"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
-  "functions": {
-    "backend/api/index.py": {
-      "runtime": "python3.9"
-    }
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
   },
-  "installCommand": "cd frontend && npm install"
+  "deploy": {
+    "startCommand": "python backend/app.py",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 100,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
 }
+```
+
+**nixpacks.toml:**
+```toml
+[phases.setup]
+nixPkgs = ["python39", "nodejs", "npm"]
+
+[phases.install]
+cmds = [
+  "cd frontend && npm install",
+  "pip install -r backend/requirements.txt"
+]
+
+[phases.build]
+cmds = [
+  "cd frontend && npm run build"
+]
+
+[start]
+cmd = "python backend/app.py"
 ```
 
 ### Environment Variables
 
-**All in one place (Vercel dashboard):**
+**Railway automatically sets:**
+- `PORT`: Railway sets this automatically
+- `DATABASE_URL`: Automatically set when you add PostgreSQL
+
+**You need to set:**
 ```bash
-DATABASE_URL=postgresql://username:password@host:port/database
 APP_SECRET_KEY=your-secret-key-here
-VITE_API_URL=/api
+VITE_API_BASE=https://your-app.railway.app
 ```
 
 ### Post-Deployment
 
-1. **Verify Frontend:**
-   - Visit: `https://yourdomain.vercel.app`
+1. **Verify App:**
+   - Visit: `https://your-app.railway.app`
    - Should load the MathQuest app
 
 2. **Verify API:**
-   - Visit: `https://yourdomain.vercel.app/api/health`
+   - Visit: `https://your-app.railway.app/api/health`
    - Should return: `{"status": "ok"}`
 
 3. **Verify API Docs:**
-   - Visit: `https://yourdomain.vercel.app/docs`
+   - Visit: `https://your-app.railway.app/api/docs`
    - Should show Swagger documentation
 
 4. **Test Full Flow:**
@@ -161,17 +150,17 @@ VITE_API_URL=/api
 ### Troubleshooting
 
 **Common Issues:**
-- **Database Connection:** Ensure `DATABASE_URL` is set correctly
-- **Build Failures:** Check Vercel build logs for dependency issues
-- **API Not Found:** Ensure `VITE_API_URL=/api` is set correctly
+- **Database Connection:** Railway automatically handles PostgreSQL setup
+- **Build Failures:** Check Railway logs in dashboard
+- **Frontend Not Loading:** Verify static file serving in Flask app
 
-**Vercel Logs:**
+**Railway Logs:**
 ```bash
-# View logs in Vercel dashboard or CLI:
-vercel logs
+# View logs in Railway dashboard or CLI:
+railway logs
 ```
 
-For detailed deployment instructions, see [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md).
+For detailed deployment instructions, see [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md).
 
 ## API Endpoints
 - GET `/api/lessons` → lesson list with progress
@@ -192,8 +181,6 @@ For detailed deployment instructions, see [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOY
 prouvers/
 ├── backend/           # Python Flask API
 │   ├── app.py         # Main Flask application
-│   ├── api/
-│   │   └── index.py   # Vercel serverless function handler
 │   ├── src/
 │   │   ├── db.py      # Database configuration
 │   │   ├── models.py  # SQLAlchemy models
@@ -203,16 +190,16 @@ prouvers/
 │   ├── scripts/
 │   │   └── seed.py    # Database seeding
 │   ├── requirements.txt
-│   └── vercel.json    # Vercel configuration
+│   └── railway.json   # Railway configuration
 ├── frontend/          # React + Vite
 │   ├── src/
 │   │   ├── components/
 │   │   ├── pages/
 │   │   └── api.ts     # API client
 │   ├── package.json
-│   └── vercel.json    # Vercel configuration
+│   └── nixpacks.toml  # Railway build configuration
 ├── docker-compose.yml # Local development
-├── VERCEL_DEPLOYMENT.md # Detailed deployment guide
+├── RAILWAY_DEPLOYMENT.md # Detailed deployment guide
 └── README.md          # This file
 ```
 
