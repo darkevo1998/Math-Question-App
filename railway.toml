@@ -1,0 +1,15 @@
+# Railway Configuration for Monorepo
+# 
+# This is a monorepo containing both frontend and backend services.
+# To deploy on Railway:
+# 
+# 1. Create a new Railway project
+# 2. Add a service and point it to the 'backend' directory
+# 3. Add another service and point it to the 'frontend' directory
+# 4. For the database, use Railway's PostgreSQL service instead of docker-compose
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "echo 'Please deploy backend/ and frontend/ as separate Railway services'"
