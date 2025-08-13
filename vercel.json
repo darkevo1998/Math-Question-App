@@ -16,10 +16,5 @@
     "backend/api/index.py": {
       "runtime": "python3.9"
     }
-  },
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "APP_SECRET_KEY": "@app_secret_key",
-    "VITE_API_URL": "/api"
   }
 }

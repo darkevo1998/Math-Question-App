@@ -45,7 +45,7 @@ npm run dev
 
 Open http://localhost:5173.
 
-## Deployment with Vercel
+## Deployment with Vercel (Single Project)
 
 ### Prerequisites
 - GitHub account with this repository
@@ -54,28 +54,23 @@ Open http://localhost:5173.
 
 ### Step-by-Step Deployment
 
-1. **Deploy Backend API**
+1. **Deploy as Single Project**
    ```bash
    # Go to vercel.com and sign in with GitHub
    # Click "New Project" → Import your GitHub repository
-   # Set Root Directory to: backend
-   # Framework Preset: Other
-   # Build Command: pip install -r requirements.txt
-   # Add Environment Variables:
-   # - DATABASE_URL: Your PostgreSQL connection string
-   # - APP_SECRET_KEY: Generate a random secret key
+   # Root Directory: / (leave empty for root)
+   # Framework Preset: Vite
+   # Build Command: cd frontend && npm install && npm run build
+   # Output Directory: frontend/dist
    ```
 
-2. **Deploy Frontend**
+2. **Set Environment Variables**
    ```bash
-   # In Vercel Dashboard, click "New Project" again
-   # Import the same GitHub repository
-   # Set Root Directory to: frontend
-   # Framework Preset: Vite
-   # Build Command: npm run build
-   # Output Directory: dist
-   # Add Environment Variable:
-   # - VITE_API_URL: Your backend API URL (e.g., https://your-backend.vercel.app)
+   # In Vercel dashboard → Settings → Environment Variables
+   # Add these variables:
+   # - DATABASE_URL: Your PostgreSQL connection string
+   # - APP_SECRET_KEY: Generate a random secret key
+   # - VITE_API_URL: /api
    ```
 
 3. **Database Setup**
@@ -96,9 +91,9 @@ Open http://localhost:5173.
    npm i -g vercel
    
    # Login and run migrations
-   cd backend
    vercel login
    vercel env pull .env
+   cd backend
    python -c "
    from alembic.config import Config
    from alembic import command
@@ -108,73 +103,55 @@ Open http://localhost:5173.
    python scripts/seed.py
    ```
 
-### Vercel Configuration Files
+### Vercel Configuration
 
-**backend/vercel.json:**
+**Root vercel.json:**
 ```json
 {
-  "functions": {
-    "api/index.py": {
-      "runtime": "python3.9"
-    }
-  },
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
-    }
-  ],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "APP_SECRET_KEY": "@app_secret_key"
-  }
-}
-```
-
-**frontend/vercel.json:**
-```json
-{
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
   "framework": "vite",
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/backend/api/index.py"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
-  "env": {
-    "VITE_API_URL": "@vite_api_url"
-  }
+  "functions": {
+    "backend/api/index.py": {
+      "runtime": "python3.9"
+    }
+  },
+  "installCommand": "cd frontend && npm install"
 }
 ```
 
-### Environment Variables Reference
+### Environment Variables
 
-**Backend Environment Variables:**
+**All in one place (Vercel dashboard):**
 ```bash
 DATABASE_URL=postgresql://username:password@host:port/database
 APP_SECRET_KEY=your-secret-key-here
-```
-
-**Frontend Environment Variables:**
-```bash
-VITE_API_URL=https://your-backend.vercel.app
+VITE_API_URL=/api
 ```
 
 ### Post-Deployment
 
-1. **Verify Backend:**
-   - Visit: `https://your-backend.vercel.app/api/health`
+1. **Verify Frontend:**
+   - Visit: `https://yourdomain.vercel.app`
+   - Should load the MathQuest app
+
+2. **Verify API:**
+   - Visit: `https://yourdomain.vercel.app/api/health`
    - Should return: `{"status": "ok"}`
 
-2. **Verify API Docs:**
-   - Visit: `https://your-backend.vercel.app/docs`
+3. **Verify API Docs:**
+   - Visit: `https://yourdomain.vercel.app/docs`
    - Should show Swagger documentation
-
-3. **Verify Frontend:**
-   - Visit: `https://your-frontend.vercel.app`
-   - Should load the MathQuest app
 
 4. **Test Full Flow:**
    - Complete a lesson
@@ -185,9 +162,8 @@ VITE_API_URL=https://your-backend.vercel.app
 
 **Common Issues:**
 - **Database Connection:** Ensure `DATABASE_URL` is set correctly
-- **CORS Errors:** Backend CORS is configured for all origins
 - **Build Failures:** Check Vercel build logs for dependency issues
-- **API Not Found:** Ensure backend is deployed and `VITE_API_URL` is correct
+- **API Not Found:** Ensure `VITE_API_URL=/api` is set correctly
 
 **Vercel Logs:**
 ```bash

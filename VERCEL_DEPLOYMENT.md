@@ -1,6 +1,6 @@
-# Vercel Deployment Guide
+# Vercel Deployment Guide (Single Project)
 
-This guide will help you deploy your MathQuest application on Vercel. You'll need to deploy both the frontend and backend separately.
+This guide will help you deploy your MathQuest application on Vercel as a single project with both frontend and backend.
 
 ## Prerequisites
 
