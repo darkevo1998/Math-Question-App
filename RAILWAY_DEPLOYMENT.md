@@ -60,8 +60,7 @@ The following configuration files have been created for Railway deployment:
 - Installs both Python and Node.js dependencies
 - Builds the frontend
 
-### `Procfile`
-- Specifies the start command for the application
+
 
 ## Environment Variables
 
@@ -187,7 +186,7 @@ Railway provides:
 1. **Build Failures**:
    - Check Railway logs for error messages
    - Ensure all dependencies are in `requirements.txt`
-   - Verify `nixpacks.toml` configuration
+   - Verify `Dockerfile` configuration
 
 2. **Database Connection Issues**:
    - Verify `DATABASE_URL` is set correctly

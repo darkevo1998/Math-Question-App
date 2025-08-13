@@ -84,10 +84,9 @@ Open http://localhost:5173.
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "DOCKERFILE"
   },
   "deploy": {
-    "startCommand": "python backend/app.py",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
@@ -201,7 +200,7 @@ prouvers/
 │   ├── scripts/
 │   │   └── seed.py    # Database seeding
 │   ├── requirements.txt
-│   └── railway.json   # Railway configuration
+│   └── Dockerfile     # Railway build configuration
 ├── frontend/          # React + Vite
 │   ├── src/
 │   │   ├── components/
