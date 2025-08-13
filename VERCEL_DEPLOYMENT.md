@@ -1,172 +1,178 @@
-# Vercel Deployment Guide (Single Project)
+# Vercel Deployment Instructions for MathQuest
 
-This guide will help you deploy your MathQuest application on Vercel as a single project with both frontend and backend.
+This guide will help you deploy your MathQuest application to Vercel. The project consists of a React frontend and Flask backend in a monorepo structure.
 
 ## Prerequisites
 
-1. A Vercel account
-2. Git repository connected to Vercel
-3. A PostgreSQL database (you can use Vercel Postgres, Supabase, or any other PostgreSQL provider)
+1. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
+2. **Git Repository**: Your code should be in a Git repository (GitHub, GitLab, or Bitbucket)
+3. **Vercel CLI** (optional): Install with `npm i -g vercel`
+
+## Environment Variables Setup
+
+Before deploying, you'll need to set up environment variables in Vercel:
+
+### Required Environment Variables
+
+1. **Database Configuration**:
+   - `DATABASE_URL`: Your PostgreSQL database connection string
+   - `APP_SECRET_KEY`: A secure secret key for your Flask app
+
+2. **Frontend Configuration**:
+   - `VITE_API_BASE`: The base URL for your API (will be your Vercel domain)
+
+### Optional Environment Variables
+
+- `PORT`: Port for the Flask app (Vercel will handle this automatically)
+- `DEBUG`: Set to `false` for production
 
 ## Deployment Steps
 
-### 1. Deploy Backend API
+### Method 1: Deploy via Vercel Dashboard (Recommended)
 
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Click "New Project"
-3. Import your GitHub repository
-4. **Important**: Set the **Root Directory** to `backend`
-5. Configure the following settings:
-   - **Framework Preset**: Other
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Output Directory**: Leave empty
-   - **Install Command**: Leave empty
+1. **Connect Your Repository**:
+   - Go to [vercel.com/dashboard](https://vercel.com/dashboard)
+   - Click "New Project"
+   - Import your Git repository
+   - Select the repository containing your MathQuest project
 
-6. Add Environment Variables:
-   - `DATABASE_URL`: Your PostgreSQL connection string
-   - `APP_SECRET_KEY`: Generate a random secret key
+2. **Configure Project Settings**:
+   - **Framework Preset**: Select "Other" (since this is a monorepo)
+   - **Root Directory**: Leave as `/` (root of your repository)
+   - **Build Command**: `cd frontend && npm install && npm run build`
+   - **Output Directory**: `frontend/dist`
+   - **Install Command**: `npm run install:all`
 
-7. Deploy the project
+3. **Set Environment Variables**:
+   - In the project settings, go to "Environment Variables"
+   - Add all required environment variables listed above
+   - Set `VITE_API_BASE` to your Vercel domain (e.g., `https://your-app.vercel.app`)
 
-### 2. Deploy Frontend
+4. **Deploy**:
+   - Click "Deploy"
+   - Vercel will automatically build and deploy your application
 
-1. In Vercel Dashboard, click "New Project" again
-2. Import the same GitHub repository
-3. **Important**: Set the **Root Directory** to `frontend`
-4. Configure the following settings:
-   - **Framework Preset**: Vite
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
+### Method 2: Deploy via Vercel CLI
 
-5. Add Environment Variables:
-   - `VITE_API_URL`: Set this to your backend API URL (e.g., `https://your-backend.vercel.app`)
-
-6. Deploy the project
-
-### 3. Database Setup
-
-You have several options for the PostgreSQL database:
-
-#### Option A: Vercel Postgres (Recommended)
-1. In your Vercel dashboard, go to "Storage"
-2. Create a new Postgres database
-3. Copy the connection string to your backend environment variables
-
-#### Option B: Supabase
-1. Create a free account at [Supabase](https://supabase.com)
-2. Create a new project
-3. Copy the connection string to your backend environment variables
-
-#### Option C: Railway Postgres
-1. Create a PostgreSQL service on Railway
-2. Copy the connection string to your backend environment variables
-
-### 4. Database Migrations and Seeding
-
-After setting up the database, you'll need to run migrations and seed data:
-
-1. **Option 1: Use Vercel CLI**
+1. **Install Vercel CLI**:
    ```bash
-   # Install Vercel CLI
    npm i -g vercel
-   
-   # Login to Vercel
-   vercel login
-   
-   # Run migrations and seed data
-   cd backend
-   vercel env pull .env
-   python -c "
-   from alembic.config import Config
-   from alembic import command
-   config = Config('alembic.ini')
-   command.upgrade(config, 'head')
-   "
-   python scripts/seed.py
    ```
 
-2. **Option 2: Use a database management tool**
-   - Connect to your database using a tool like pgAdmin or DBeaver
-   - Run the SQL from the migration files manually
-   - Run the seed script locally with the production database URL
+2. **Login to Vercel**:
+   ```bash
+   vercel login
+   ```
 
-## Environment Variables
+3. **Deploy**:
+   ```bash
+   vercel
+   ```
 
-### Backend Environment Variables
-```
-DATABASE_URL=postgresql://username:password@host:port/database
-APP_SECRET_KEY=your-secret-key-here
-```
+4. **Follow the prompts**:
+   - Link to existing project or create new
+   - Set environment variables when prompted
+   - Confirm deployment settings
 
-### Frontend Environment Variables
-```
-VITE_API_URL=https://your-backend.vercel.app
-```
+## Configuration Files
 
-## File Structure
+The following configuration files have been created for Vercel deployment:
 
-```
-prouvers/
-├── backend/           # Python Flask API
-│   ├── app.py
-│   ├── requirements.txt
-│   ├── vercel.json    # Vercel configuration
-│   └── src/
-├── frontend/          # React + Vite
-│   ├── package.json
-│   ├── vercel.json    # Vercel configuration
-│   └── src/
-├── docker-compose.yml # Local development only
-└── VERCEL_DEPLOYMENT.md # This deployment guide
-```
+### `vercel.json`
+- Configures the monorepo build process
+- Routes API requests to the Flask backend
+- Routes frontend requests to the React app
 
-## Troubleshooting
+### `backend/api/vercel_app.py`
+- Entry point for the Flask backend on Vercel
+- Imports and initializes your Flask app
 
-### Build Errors
-- Ensure all dependencies are listed in `requirements.txt` (backend) and `package.json` (frontend)
-- Check that the root directory is correctly set for each deployment
+## Database Setup
 
-### Database Connection Issues
-- Verify the `DATABASE_URL` is correctly set in the backend environment variables
-- Ensure the database is accessible from Vercel's servers
-- Check that migrations have been run
+### Option 1: Use Vercel Postgres (Recommended)
 
-### CORS Issues
-- The backend is configured to allow all origins (`*`) for development
-- For production, you may want to restrict this to your frontend domain
+1. **Create Vercel Postgres Database**:
+   - In your Vercel dashboard, go to "Storage"
+   - Create a new Postgres database
+   - Copy the connection string
 
-### API Not Found
-- Ensure the backend is deployed and accessible
-- Check that the `VITE_API_URL` is correctly set in the frontend environment variables
+2. **Set Environment Variable**:
+   - Add `DATABASE_URL` with the connection string from Vercel Postgres
 
-## Local Development
+3. **Run Migrations**:
+   - The database will be automatically initialized when the app starts
 
-For local development, you can still use Docker Compose:
+### Option 2: Use External Database
 
-```bash
-docker-compose up -d
-```
+1. **Set up PostgreSQL database** (e.g., on Railway, Supabase, or AWS RDS)
+2. **Add the connection string** as `DATABASE_URL` environment variable
 
-This will start a PostgreSQL database locally. The backend and frontend can be run separately:
+## Post-Deployment
 
-```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-python app.py
+### Verify Deployment
 
-# Frontend
-cd frontend
-npm install
-npm run dev
-```
+1. **Check Frontend**: Visit your Vercel domain to ensure the React app loads
+2. **Check Backend**: Visit `https://your-domain.vercel.app/api/health` to verify the API is working
+3. **Check API Documentation**: Visit `https://your-domain.vercel.app/api/docs` for Swagger documentation
 
-## Advantages of Vercel
+### Troubleshooting
 
-1. **Automatic deployments** from Git
-2. **Global CDN** for fast loading
-3. **Serverless functions** for the backend
-4. **Built-in analytics** and monitoring
-5. **Easy environment variable management**
-6. **Free tier** available for both frontend and backend
+1. **Build Failures**:
+   - Check the build logs in Vercel dashboard
+   - Ensure all dependencies are properly installed
+   - Verify environment variables are set correctly
+
+2. **API Issues**:
+   - Check that `DATABASE_URL` is correctly set
+   - Verify the Flask app is properly configured
+   - Check the function logs in Vercel dashboard
+
+3. **Frontend Issues**:
+   - Ensure `VITE_API_BASE` is set to the correct domain
+   - Check that the build process completes successfully
+
+## Custom Domain (Optional)
+
+1. **Add Custom Domain**:
+   - In Vercel dashboard, go to "Settings" → "Domains"
+   - Add your custom domain
+   - Follow DNS configuration instructions
+
+2. **Update Environment Variables**:
+   - Update `VITE_API_BASE` to use your custom domain
+
+## Continuous Deployment
+
+Once deployed, Vercel will automatically:
+- Deploy new versions when you push to your main branch
+- Create preview deployments for pull requests
+- Handle rollbacks if needed
+
+## Monitoring and Analytics
+
+- **Function Logs**: Monitor your Flask API in the Vercel dashboard
+- **Performance**: Use Vercel Analytics to track frontend performance
+- **Uptime**: Vercel provides built-in uptime monitoring
+
+## Cost Considerations
+
+- **Hobby Plan**: Free tier includes 100GB bandwidth and 100 serverless function executions per day
+- **Pro Plan**: $20/month for additional resources and features
+- **Enterprise Plan**: Custom pricing for large-scale deployments
+
+## Security Best Practices
+
+1. **Environment Variables**: Never commit sensitive data to your repository
+2. **CORS**: Configure CORS properly for production
+3. **HTTPS**: Vercel automatically provides SSL certificates
+4. **Database**: Use connection pooling and proper authentication
+
+## Support
+
+- **Vercel Documentation**: [vercel.com/docs](https://vercel.com/docs)
+- **Vercel Community**: [github.com/vercel/vercel/discussions](https://github.com/vercel/vercel/discussions)
+- **Project Issues**: Check your project's GitHub issues for specific problems
+
+---
+
+Your MathQuest application should now be successfully deployed on Vercel! The frontend will be served as static files, and the Flask backend will run as serverless functions.
