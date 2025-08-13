@@ -2,6 +2,8 @@
 
 This is a monorepo containing both frontend and backend services. To deploy on Railway, you need to create separate services for each part of the application.
 
+> **Note**: This guide addresses the "Nixpacks was unable to generate a build plan for this app" error that occurs when deploying monorepos. For more information, see [Railway's official documentation on this error](https://docs.railway.app/deploy/deployments/errors#nixpacks-was-unable-to-generate-a-build-plan-for-this-app).
+
 ## Prerequisites
 
 1. A Railway account
@@ -16,13 +18,18 @@ This is a monorepo containing both frontend and backend services. To deploy on R
 3. Choose "Deploy from GitHub repo"
 4. Select your repository
 
+**⚠️ IMPORTANT**: Do NOT deploy from the root directory. You must create separate services for backend and frontend.
+
 ### 2. Add Backend Service
 
 1. In your Railway project, click "New Service"
 2. Choose "GitHub Repo"
 3. Select the same repository
-4. **Important**: Set the **Root Directory** to `backend`
-5. Railway will automatically detect it as a Python application
+4. **CRITICAL**: Set the **Root Directory** to `backend`
+   - This tells Railway to only look at the `backend/` directory for this service
+   - This is the key step that fixes the "Nixpacks was unable to generate a build plan" error
+   - Without this, Railway will try to build the entire monorepo and fail
+5. Railway will automatically detect it as a Python application (because of `requirements.txt`)
 6. Add the following environment variables:
    - `DATABASE_URL` (Railway will provide this when you add a PostgreSQL service)
    - `APP_SECRET_KEY` (generate a random string)
@@ -33,8 +40,11 @@ This is a monorepo containing both frontend and backend services. To deploy on R
 1. In your Railway project, click "New Service" again
 2. Choose "GitHub Repo"
 3. Select the same repository
-4. **Important**: Set the **Root Directory** to `frontend`
-5. Railway will automatically detect it as a Node.js application
+4. **CRITICAL**: Set the **Root Directory** to `frontend`
+   - This tells Railway to only look at the `frontend/` directory for this service
+   - This is the key step that fixes the "Nixpacks was unable to generate a build plan" error
+   - Without this, Railway will try to build the entire monorepo and fail
+5. Railway will automatically detect it as a Node.js application (because of `package.json`)
 6. Add the following environment variables:
    - `VITE_API_URL` (set this to your backend service URL, e.g., `https://your-backend-service.railway.app`)
 
@@ -68,6 +78,34 @@ VITE_API_URL=https://your-backend-service.railway.app
 
 ## Troubleshooting
 
+### "Nixpacks was unable to generate a build plan for this app" Error
+
+**Error Message**: 
+```
+Nixpacks was unable to generate a build plan for this app.
+Please check the documentation for supported languages: https://nixpacks.com
+
+The contents of the app directory are:
+docker-compose.yml
+backend/
+frontend/
+README.md
+.gitignore
+```
+
+**Root Cause**: Railway is trying to build your entire monorepo as a single application instead of recognizing it as separate services.
+
+**Solution**:
+1. **Set the Root Directory** for each service to point to the specific subdirectory (`backend/` or `frontend/`)
+2. **Don't deploy from the root directory** - Railway needs to know which part of your monorepo to build
+3. **Create separate services** - One for backend, one for frontend, one for database
+
+**Step-by-step fix**:
+1. Delete any existing services that were created from the root directory
+2. Create a new backend service with root directory set to `backend/`
+3. Create a new frontend service with root directory set to `frontend/`
+4. Add a PostgreSQL database service
+
 ### Build Errors
 - Ensure the root directory is correctly set for each service
 - Check that all dependencies are properly listed in `requirements.txt` (backend) and `package.json` (frontend)
@@ -91,10 +129,21 @@ prouvers/
 ├── frontend/          # React + Vite
 │   ├── package.json
 │   └── railway.json
-├── docker-compose.yml # Local development only
+├── docker-compose.yml # Local development only (excluded from Railway builds)
 ├── railway.toml       # Railway monorepo config
-└── .railwayignore     # Excludes files from Railway builds
+├── .railwayignore     # Excludes files from Railway builds
+└── RAILWAY_DEPLOYMENT.md # This deployment guide
 ```
+
+## Why This Works
+
+According to [Railway's official documentation](https://docs.railway.app/deploy/deployments/errors#nixpacks-was-unable-to-generate-a-build-plan-for-this-app), the "Nixpacks was unable to generate a build plan" error occurs when:
+
+1. **Monorepo without root directory**: Nixpacks doesn't know which directory you want to deploy from
+2. **Unsupported project layout**: The directory structure doesn't match supported build plans
+3. **Unsupported language/framework**: The technology stack isn't supported by Nixpacks
+
+Our solution addresses the first issue by explicitly setting the root directory for each service, allowing Nixpacks to properly analyze and build each part of the application.
 
 ## Local Development
 

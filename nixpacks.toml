@@ -1,0 +1,18 @@
+# Nixpacks Configuration for Monorepo
+# This file tells Nixpacks that this is a monorepo and provides deployment guidance
+
+# This is a monorepo - do not build from root
+# Deploy backend/ and frontend/ as separate services
+
+[phases.setup]
+nixPkgs = ["nodejs", "python3"]
+
+[phases.install]
+cmds = [
+  "echo 'This is a monorepo. Please deploy backend/ and frontend/ as separate Railway services.'",
+  "echo 'Set the root directory to backend/ for the backend service'",
+  "echo 'Set the root directory to frontend/ for the frontend service'"
+]
+
+[start]
+cmd = "echo 'Monorepo detected. Please deploy individual services from their respective directories.'"

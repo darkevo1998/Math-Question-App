@@ -7,5 +7,12 @@
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE"
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "PORT": "5001"
+      }
+    }
   }
 }
