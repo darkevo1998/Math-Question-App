@@ -1,5 +1,0 @@
-# Ignore files that should not be considered by Railway builds
-docker-compose.yml
-README.md
-.gitignore
-RAILWAY_DEPLOYMENT.md

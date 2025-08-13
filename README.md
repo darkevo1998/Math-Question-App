@@ -45,120 +45,135 @@ npm run dev
 
 Open http://localhost:5173.
 
-## Deployment with Railway
+## Deployment with Vercel
 
 ### Prerequisites
 - GitHub account with this repository
-- Railway account (free at [railway.app](https://railway.app))
+- Vercel account (free at [vercel.com](https://vercel.com))
+- PostgreSQL database (Vercel Postgres, Supabase, or Railway Postgres)
 
 ### Step-by-Step Deployment
 
-1. **Connect to Railway**
+1. **Deploy Backend API**
    ```bash
-   # Go to railway.app and sign in with GitHub
-   # Click "New Project" → "Deploy from GitHub repo"
-   # Select your MathQuest repository
+   # Go to vercel.com and sign in with GitHub
+   # Click "New Project" → Import your GitHub repository
+   # Set Root Directory to: backend
+   # Framework Preset: Other
+   # Build Command: pip install -r requirements.txt
+   # Add Environment Variables:
+   # - DATABASE_URL: Your PostgreSQL connection string
+   # - APP_SECRET_KEY: Generate a random secret key
    ```
 
-2. **Add PostgreSQL Database**
+2. **Deploy Frontend**
    ```bash
-   # In Railway dashboard, click "New" → "Database" → "PostgreSQL"
-   # This creates a managed PostgreSQL instance
+   # In Vercel Dashboard, click "New Project" again
+   # Import the same GitHub repository
+   # Set Root Directory to: frontend
+   # Framework Preset: Vite
+   # Build Command: npm run build
+   # Output Directory: dist
+   # Add Environment Variable:
+   # - VITE_API_URL: Your backend API URL (e.g., https://your-backend.vercel.app)
    ```
 
-3. **Deploy Backend Service**
+3. **Database Setup**
    ```bash
-   # In Railway dashboard, click "New" → "GitHub Repo"
-   # Select your repo and set:
-   # - Root Directory: backend
-   # - Build Command: pip install -r requirements.txt && alembic upgrade head && python scripts/seed.py
-   # - Start Command: python app.py
+   # Option A: Vercel Postgres (Recommended)
+   # In Vercel dashboard, go to "Storage" → Create new Postgres database
+   
+   # Option B: Supabase
+   # Create account at supabase.com → Create new project
+   
+   # Option C: Railway Postgres
+   # Create PostgreSQL service on Railway
    ```
 
-4. **Configure Environment Variables**
+4. **Database Migrations and Seeding**
    ```bash
-   # In your backend service settings, add:
-   DATABASE_URL=postgresql://[from-railway-postgres-service]
-   APP_SECRET_KEY=your-production-secret-key
-   XP_PER_CORRECT=10
-   PORT=5001
-   FLASK_ENV=production
+   # Install Vercel CLI
+   npm i -g vercel
+   
+   # Login and run migrations
+   cd backend
+   vercel login
+   vercel env pull .env
+   python -c "
+   from alembic.config import Config
+   from alembic import command
+   config = Config('alembic.ini')
+   command.upgrade(config, 'head')
+   "
+   python scripts/seed.py
    ```
 
-5. **Deploy Frontend Service**
-   ```bash
-   # In Railway dashboard, click "New" → "Static Site"
-   # Set:
-   # - Root Directory: frontend
-   # - Build Command: npm install && npm run build
-   # - Output Directory: dist
-   ```
+### Vercel Configuration Files
 
-6. **Update Frontend API URL**
-   ```bash
-   # In frontend/.env.production (create if needed):
-   VITE_API_BASE=https://your-backend-service-url.railway.app
-   ```
-
-### Railway Configuration Files
-
-**backend/railway.json** (create this file):
+**backend/vercel.json:**
 ```json
 {
-  "build": {
-    "builder": "NIXPACKS"
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.9"
+    }
   },
-  "deploy": {
-    "startCommand": "python app.py",
-    "healthcheckPath": "/api/health",
-    "healthcheckTimeout": 100,
-    "restartPolicyType": "ON_FAILURE"
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.py"
+    }
+  ],
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "APP_SECRET_KEY": "@app_secret_key"
   }
 }
 ```
 
-**frontend/railway.json** (create this file):
+**frontend/vercel.json:**
 ```json
 {
-  "build": {
-    "builder": "NIXPACKS"
-  },
-  "deploy": {
-    "startCommand": "npm run preview",
-    "healthcheckPath": "/",
-    "healthcheckTimeout": 100
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "@vite_api_url"
   }
 }
 ```
 
 ### Environment Variables Reference
 
-**Backend (.env):**
+**Backend Environment Variables:**
 ```bash
-FLASK_ENV=production
-DATABASE_URL=postgresql://[railway-postgres-url]
-APP_SECRET_KEY=your-secure-production-key
-XP_PER_CORRECT=10
-PORT=5001
+DATABASE_URL=postgresql://username:password@host:port/database
+APP_SECRET_KEY=your-secret-key-here
 ```
 
-**Frontend (.env.production):**
+**Frontend Environment Variables:**
 ```bash
-VITE_API_BASE=https://your-backend-service-url.railway.app
+VITE_API_URL=https://your-backend.vercel.app
 ```
 
 ### Post-Deployment
 
 1. **Verify Backend:**
-   - Visit: `https://your-backend-url.railway.app/api/health`
+   - Visit: `https://your-backend.vercel.app/api/health`
    - Should return: `{"status": "ok"}`
 
 2. **Verify API Docs:**
-   - Visit: `https://your-backend-url.railway.app/docs`
+   - Visit: `https://your-backend.vercel.app/docs`
    - Should show Swagger documentation
 
 3. **Verify Frontend:**
-   - Visit: `https://your-frontend-url.railway.app`
+   - Visit: `https://your-frontend.vercel.app`
    - Should load the MathQuest app
 
 4. **Test Full Flow:**
@@ -171,14 +186,16 @@ VITE_API_BASE=https://your-backend-service-url.railway.app
 **Common Issues:**
 - **Database Connection:** Ensure `DATABASE_URL` is set correctly
 - **CORS Errors:** Backend CORS is configured for all origins
-- **Build Failures:** Check Railway logs for dependency issues
-- **Port Issues:** Railway auto-assigns ports, use `PORT` env var
+- **Build Failures:** Check Vercel build logs for dependency issues
+- **API Not Found:** Ensure backend is deployed and `VITE_API_URL` is correct
 
-**Railway Logs:**
+**Vercel Logs:**
 ```bash
-# View logs in Railway dashboard or CLI:
-railway logs
+# View logs in Vercel dashboard or CLI:
+vercel logs
 ```
+
+For detailed deployment instructions, see [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md).
 
 ## API Endpoints
 - GET `/api/lessons` → lesson list with progress
@@ -192,6 +209,36 @@ railway logs
 - XP per correct: `10` (configurable via `XP_PER_CORRECT`)
 - Streak increments on first submit of a new UTC day; resets if a day is missed; unchanged on multiple submits same day
 - Idempotency: `attempt_id` unique via `submissions.attempt_id`; duplicate returns 409
+
+## Project Structure
+
+```
+prouvers/
+├── backend/           # Python Flask API
+│   ├── app.py         # Main Flask application
+│   ├── api/
+│   │   └── index.py   # Vercel serverless function handler
+│   ├── src/
+│   │   ├── db.py      # Database configuration
+│   │   ├── models.py  # SQLAlchemy models
+│   │   ├── routes.py  # API routes
+│   │   └── services/  # Business logic
+│   ├── alembic/       # Database migrations
+│   ├── scripts/
+│   │   └── seed.py    # Database seeding
+│   ├── requirements.txt
+│   └── vercel.json    # Vercel configuration
+├── frontend/          # React + Vite
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── api.ts     # API client
+│   ├── package.json
+│   └── vercel.json    # Vercel configuration
+├── docker-compose.yml # Local development
+├── VERCEL_DEPLOYMENT.md # Detailed deployment guide
+└── README.md          # This file
+```
 
 ## Database Schema
 Tables: `users`, `lessons`, `problems`, `problem_options`, `submissions`, `user_progress`, `user_problem_progress`.
