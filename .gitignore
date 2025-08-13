@@ -161,6 +161,3 @@ Thumbs.db
 
 # Docker
 .dockerignore
-
-# Railway
-.railway/
