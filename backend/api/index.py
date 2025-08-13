@@ -2,19 +2,16 @@ import os
 import sys
 import json
 from http.server import BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 
 # Add the backend directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Try to import the Flask app
-try:
-    from app import create_app
-    app = create_app()
-    print("Flask app created successfully")
-except Exception as e:
-    print(f"Error creating Flask app: {e}")
-    app = None
+# Import Flask app
+from app import create_app
+
+# Create Flask app instance
+app = create_app()
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -23,24 +20,7 @@ class handler(BaseHTTPRequestHandler):
             parsed_url = urlparse(self.path)
             path = parsed_url.path
             
-            # Simple test endpoint
-            if path == '/test':
-                self.send_response(200)
-                self.send_header('Content-Type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                self.wfile.write(json.dumps({'status': 'ok', 'message': 'Serverless function is working!'}).encode())
-                return
-            
-            # Check if app is available
-            if app is None:
-                self.send_response(500)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'error': 'Flask app not initialized'}).encode())
-                return
-            
-            # Create a test request context
+            # Create Flask request context
             with app.test_request_context(path, query_string=parsed_url.query):
                 response = app.full_dispatch_request()
                 
@@ -78,7 +58,7 @@ class handler(BaseHTTPRequestHandler):
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length) if content_length > 0 else b''
             
-            # Create a test request context
+            # Create Flask request context
             with app.test_request_context(path, data=post_data, method='POST'):
                 response = app.full_dispatch_request()
                 
