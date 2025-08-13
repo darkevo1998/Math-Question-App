@@ -96,24 +96,35 @@ Open http://localhost:5173.
 }
 ```
 
-**nixpacks.toml:**
-```toml
-[phases.setup]
-nixPkgs = ["python39", "nodejs", "npm"]
+**Dockerfile:**
+```dockerfile
+# Use Python 3.11 slim image
+FROM python:3.11-slim
 
-[phases.install]
-cmds = [
-  "cd frontend && npm install",
-  "pip install -r backend/requirements.txt"
-]
+# Install Node.js 20 and build tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
 
-[phases.build]
-cmds = [
-  "cd frontend && npm run build"
-]
+# Install Python dependencies
+COPY backend/requirements.txt ./backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
 
-[start]
-cmd = "python backend/app.py"
+# Install and build frontend
+COPY frontend/package*.json ./frontend/
+WORKDIR /app/frontend
+RUN npm install
+
+# Copy and build the rest
+WORKDIR /app
+COPY . .
+WORKDIR /app/frontend
+RUN npm run build
+
+# Start the application
+WORKDIR /app
+CMD ["python", "backend/app.py"]
 ```
 
 ### Environment Variables
@@ -197,7 +208,7 @@ prouvers/
 │   │   ├── pages/
 │   │   └── api.ts     # API client
 │   ├── package.json
-│   └── nixpacks.toml  # Railway build configuration
+│   └── Dockerfile     # Railway build configuration
 ├── docker-compose.yml # Local development
 ├── RAILWAY_DEPLOYMENT.md # Detailed deployment guide
 └── README.md          # This file

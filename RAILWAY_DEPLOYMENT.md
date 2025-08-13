@@ -55,8 +55,8 @@ The following configuration files have been created for Railway deployment:
 - Sets health check endpoint
 - Configures restart policies
 
-### `nixpacks.toml`
-- Defines the build process
+### `Dockerfile`
+- Defines the build process using Docker
 - Installs both Python and Node.js dependencies
 - Builds the frontend
 
