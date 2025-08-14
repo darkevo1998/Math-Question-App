@@ -9,6 +9,8 @@ import Lesson from './pages/Lesson'
 import Results from './pages/Results'
 import Profile from './pages/Profile'
 
+console.log('MathQuest app starting...')
+
 const router = createBrowserRouter([
   {
     path: '/',
@@ -22,9 +24,17 @@ const router = createBrowserRouter([
   },
 ])
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-    <Toaster position="top-center" />
-  </React.StrictMode>,
-) 
+const rootElement = document.getElementById('root')
+console.log('Root element:', rootElement)
+
+if (rootElement) {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <RouterProvider router={router} />
+      <Toaster position="top-center" />
+    </React.StrictMode>,
+  )
+  console.log('App rendered successfully')
+} else {
+  console.error('Root element not found!')
+} 
