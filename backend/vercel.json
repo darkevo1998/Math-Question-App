@@ -12,6 +12,14 @@
     {
       "src": "api/seed.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/migrate-simple.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/test-all.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -22,6 +30,14 @@
     {
       "src": "/api/seed",
       "dest": "/api/seed.py"
+    },
+    {
+      "src": "/api/migrate-simple",
+      "dest": "/api/migrate-simple.py"
+    },
+    {
+      "src": "/api/test-all",
+      "dest": "/api/test-all.py"
     },
     {
       "src": "/(.*)",

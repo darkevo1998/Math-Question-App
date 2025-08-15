@@ -64,7 +64,28 @@ async function http<T>(path: string, options?: RequestInit): Promise<T> {
 export type LessonListItem = { id: number; title: string; description: string; progress: number }
 export type LessonDetail = { id: number; title: string; description: string; progress: number; problems: any[] }
 
-export async function getLessons() { return http<{ lessons: LessonListItem[] }>(`/api/lessons`) }
-export async function getLesson(id: number) { return http<LessonDetail>(`/api/lessons/${id}`) }
-export async function submitLesson(id: number, payload: any) { return http<any>(`/api/lessons/${id}/submit`, { method: 'POST', body: JSON.stringify(payload) }) }
-export async function getProfile() { return http<any>(`/api/profile`) } 
+export async function getLessons() { 
+  const response = await http<any>(`/api/lessons`)
+  // Backend returns array directly, frontend expects { lessons: [...] }
+  return { lessons: response }
+}
+
+export async function getLesson(id: number) { 
+  return http<LessonDetail>(`/api/lessons/${id}`)
+}
+
+export async function submitLesson(id: number, payload: any) { 
+  return http<any>(`/api/lessons/${id}/submit`, { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export async function getProfile() { 
+  const response = await http<any>(`/api/profile`)
+  // Transform backend response to match frontend expectations
+  return {
+    name: response.username || "Student",
+    level: Math.floor((response.total_xp || 0) / 100) + 1,
+    totalScore: response.total_xp || 0,
+    streak: response.streak || { current: 0, best: 0 },
+    progress: response.progress || 0
+  }
+} 
